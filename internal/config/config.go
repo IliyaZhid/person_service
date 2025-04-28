@@ -9,21 +9,6 @@ import (
 	"strconv"
 )
 
-// Config содержит все настройки приложения
-type Config struct {
-	DB struct {
-		Host string
-		Port int
-		User string
-		Pass string
-		Name string
-	}
-	Server struct {
-		Port int
-		Host string
-	}
-}
-
 const (
 	// Environments
 	envLocal = "local"
@@ -41,6 +26,21 @@ const (
 	defSrvHost = "localhost"
 	defSrvPort = 8080
 )
+
+// Config содержит все настройки приложения
+type Config struct {
+	DB struct {
+		Host string
+		Port int
+		User string
+		Pass string
+		Name string
+	}
+	Server struct {
+		Port int
+		Host string
+	}
+}
 
 // MustLoad загружает конфигурацию приложения.
 // Принимает окружение через флаг -env или переменную окружения APP_ENV.
