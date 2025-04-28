@@ -10,10 +10,12 @@ import (
 )
 
 const (
-	// Environments
-	envLocal = "local"
-	envDev   = "dev"
-	envProd  = "prod"
+	// EnvLocal локальное окружение
+	EnvLocal = "local"
+	// EnvDev dev окружение
+	EnvDev = "dev"
+	// EnvProd prod окружение
+	EnvProd = "prod"
 
 	// Database defaults
 	defDBHost = "localhost"
@@ -29,7 +31,8 @@ const (
 
 // Config содержит все настройки приложения
 type Config struct {
-	DB struct {
+	Environment string
+	DB          struct {
 		Host string
 		Port int
 		User string
@@ -48,15 +51,7 @@ type Config struct {
 // В случае ошибки загрузки конфигурации вызывает log.Fatal.
 // Возвращает указатель на загруженную конфигурацию.
 func MustLoad() *Config {
-
-	// Определяем флаг для окружения
-	env := flag.String("env", "", "application environment (local/dev/prod)")
-	flag.Parse()
-
-	// Если флаг не установлен, проверяем переменную окружения
-	if *env == "" {
-		*env = os.Getenv("APP_ENV")
-	}
+	var cfg Config
 
 	wd, err := os.Getwd()
 
@@ -64,14 +59,12 @@ func MustLoad() *Config {
 		log.Fatalf("Failed to get work directory: %v", err)
 	}
 
-	envFile := getEnvFileName(*env)
-	fullPath := filepath.Join(wd, "../../", envFile)
+	cfg.Environment = determineEnvironment()
+	fullPath := filepath.Join(wd, "../../", getEnvFileName(cfg.Environment))
 
 	if err := godotenv.Load(fullPath); err != nil {
 		log.Fatalf("Failed to load .env file %s ", err)
 	}
-
-	var cfg Config
 
 	// Загружаем DB конфигурацию
 	cfg.DB.Host = getEnv("DB_HOST", defDBHost)
@@ -87,24 +80,42 @@ func MustLoad() *Config {
 	return &cfg
 }
 
-// getEnvFileName возвращает имя файла конфигурации для указанного окружения.
-// Принимает строку с именем окружения (local, dev, prod).
-// Возвращает соответствующее имя .env файла.
-func getEnvFileName(env string) string {
-	switch env {
-	case envDev:
-		log.Printf("Using %s environment", envDev)
-		return ".env.dev"
-	case envProd:
-		log.Printf("Using %s environment", envProd)
-		return ".env.prod"
-	case envLocal:
-		log.Printf("Using %s environment", envLocal)
-		return ".env.local"
-	default:
-		log.Println("Environment not specified or not recognized, using default (.env)")
-		return ".env"
+func determineEnvironment() string {
+	// Определяем флаг для окружения
+	env := flag.String("env", "", "application environment (local/dev/prod)")
+	flag.Parse()
+
+	// Приоритеты: флаг > переменная окружения > значение по умолчанию
+	if *env == "" {
+		*env = os.Getenv("APP_ENV")
 	}
+
+	switch *env {
+	case EnvDev:
+		log.Printf("Using %s environment", EnvDev)
+		return EnvDev
+	case EnvProd:
+		log.Printf("Using %s environment", EnvProd)
+		return EnvProd
+	case EnvLocal:
+		log.Printf("Using %s environment", EnvLocal)
+		return EnvLocal
+	default:
+		log.Println("Environment not specified or not recognized, using default")
+	}
+
+	return EnvLocal
+}
+
+func getEnvFileName(env string) string {
+	if env == "" || env == EnvLocal {
+		if _, err := os.Stat(".env.local"); err == nil {
+			return ".env.local"
+		} else {
+			return ".env"
+		}
+	}
+	return ".env." + env
 }
 
 // getEnv получает значение переменной окружения.
