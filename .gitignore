@@ -1,0 +1,12 @@
+# Go workspace file
+go.work
+go.work.sum
+
+# idea
+.idea/
+
+# env file
+.env
+.env.local
+.env.dev
+.env.prod
