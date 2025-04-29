@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
@@ -33,11 +34,12 @@ const (
 type Config struct {
 	Environment string
 	DB          struct {
-		Host string
-		Port int
-		User string
-		Pass string
-		Name string
+		Host    string
+		Port    int
+		User    string
+		Pass    string
+		Name    string
+		SSLMode string
 	}
 	Server struct {
 		Port int
@@ -47,8 +49,7 @@ type Config struct {
 
 // MustLoad загружает конфигурацию приложения.
 // Принимает окружение через флаг -env или переменную окружения APP_ENV.
-// Если окружение не указано, используется локальное (local).
-// В случае ошибки загрузки конфигурации вызывает log.Fatal.
+// В случае ошибки загрузки конфигурации вызывает log.Fatal().
 // Возвращает указатель на загруженную конфигурацию.
 func MustLoad() *Config {
 	var cfg Config
@@ -74,7 +75,7 @@ func MustLoad() *Config {
 	cfg.DB.Name = getEnv("DB_NAME", defDBName)
 
 	// Загружаем Server конфигурацию
-	cfg.Server.Host = getEnv("SERVER_PORT", defSrvHost)
+	cfg.Server.Host = getEnv("SERVER_HOST", defSrvHost)
 	cfg.Server.Port = getEnvAsInt("SERVER_PORT", defSrvPort)
 
 	return &cfg
@@ -142,4 +143,15 @@ func getEnvAsInt(key string, defaultVal int) int {
 	}
 	log.Printf("Env var %s is missing or not typecastable . Use defaul value", key)
 	return defaultVal
+}
+
+func (c *Config) GetDbUrl() string {
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		c.DB.Host,
+		c.DB.Port,
+		c.DB.User,
+		c.DB.Pass,
+		c.DB.Name,
+		c.DB.SSLMode,
+	)
 }
