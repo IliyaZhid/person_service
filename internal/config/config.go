@@ -10,37 +10,41 @@ import (
 	"strconv"
 )
 
+// Константы для окружений приложения
 const (
-	// EnvLocal локальное окружение
+	// EnvLocal - Локальное окружение разработки
 	EnvLocal = "local"
-	// EnvDev dev окружение
+	// EnvDev - окружение разработки/тестирования
 	EnvDev = "dev"
-	// EnvProd prod окружение
+	// EnvProd - production окружение
 	EnvProd = "prod"
 
-	// Database defaults
+	// Значения по умолчанию для подключения к БД
 	defDBHost = "localhost"
 	defDBPort = 5432
 	defDBUser = "postgres"
 	defDBPass = ""
 	defDBName = "postgres"
 
-	// Server defaults
+	// Значения по умолчанию для сервера
 	defSrvHost = "localhost"
 	defSrvPort = 8080
 )
 
 // Config содержит все настройки приложения
 type Config struct {
+	// Environment - текущее окружение приложения (local/dev/prod)
 	Environment string
-	DB          struct {
+	// DB - настройки подключения к базе данных
+	DB struct {
 		Host    string
 		Port    int
 		User    string
 		Pass    string
 		Name    string
-		SSLMode string
+		SSLMode string // (disable/require/verify-full)
 	}
+	// Server - настройки сервера приложения
 	Server struct {
 		Port int
 		Host string
@@ -81,6 +85,9 @@ func MustLoad() *Config {
 	return &cfg
 }
 
+// determineEnvironment определяет текущее окружение приложения.
+// Проверяет флаг командной строки и переменные окружения.
+// Возвращает одно из: EnvLocal, EnvDev или EnvProd.
 func determineEnvironment() string {
 	// Определяем флаг для окружения
 	env := flag.String("env", "", "application environment (local/dev/prod)")
@@ -108,6 +115,7 @@ func determineEnvironment() string {
 	return EnvLocal
 }
 
+// getEnvFileName возвращает имя .env файла для указанного окружения.
 func getEnvFileName(env string) string {
 	if env == "" || env == EnvLocal {
 		if _, err := os.Stat(".env.local"); err == nil {
@@ -121,8 +129,6 @@ func getEnvFileName(env string) string {
 
 // getEnv получает значение переменной окружения.
 // Если переменная не найдена, возвращает значение по умолчанию.
-// key - имя переменной окружения
-// defaultVal - значение по умолчанию
 func getEnv(key string, defaultVal string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
@@ -134,8 +140,6 @@ func getEnv(key string, defaultVal string) string {
 // getEnvAsInt получает числовое значение переменной окружения.
 // Если переменная не найдена или не может быть преобразована в число,
 // возвращает значение по умолчанию.
-// key - имя переменной окружения
-// defaultVal - значение по умолчанию
 func getEnvAsInt(key string, defaultVal int) int {
 	valueStr := getEnv(key, "")
 	if value, err := strconv.Atoi(valueStr); err == nil {
@@ -145,6 +149,7 @@ func getEnvAsInt(key string, defaultVal int) int {
 	return defaultVal
 }
 
+// GetDbUrl  Возвращает сформированную строку подключения.
 func (c *Config) GetDbUrl() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.DB.Host,
